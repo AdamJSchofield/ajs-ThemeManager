@@ -16,6 +16,7 @@ namespace MudBlazor.ThemeManager.TestApp
 
             builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
             builder.Services.AddMudServices();
+            builder.Services.AddScoped<IThemePresetStorage, LocalBrowserPresetStorage>();
 
             await builder.Build().RunAsync();
         }

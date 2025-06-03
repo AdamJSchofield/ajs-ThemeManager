@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MudBlazor.State;
 using MudBlazor.ThemeManager.Extensions;
+using MudBlazor.ThemeManager.Models;
 
 namespace MudBlazor.ThemeManager;
 
@@ -15,6 +16,8 @@ public partial class MudThemeManager : ComponentBaseWithState
     private PaletteDark? _currentPaletteDark;
     private Palette _currentPalette;
     private MudTheme? _customTheme;
+    private MudThemePresetInfo? _currentPresetInfo;
+    private string _newPresetName = string.Empty;
 
     public MudThemeManager()
     {
@@ -28,7 +31,16 @@ public partial class MudThemeManager : ComponentBaseWithState
         _currentPalette = GetPalette();
     }
 
-    public string ThemePresets { get; set; } = "Not Implemented";
+    [Parameter]
+    public IEnumerable<MudThemePresetInfo> ThemePresets { get; set; } = Enumerable.Empty<MudThemePresetInfo>();
+
+    // Invoked when the user interacts with preset management functions, e.g. selecting or updating a preset
+    [Parameter]
+    public EventCallback<ThemePresetOnChangedEventArgs> ThemePresetChanged { get; set; }
+
+    // Invoked when the user interacts with the theme manager and changes the theme
+    [Parameter]
+    public EventCallback<MudThemePreset> ThemeChanged { get; set; }
 
     [Parameter]
     public bool Open { get; set; }
@@ -37,7 +49,7 @@ public partial class MudThemeManager : ComponentBaseWithState
     public EventCallback<bool> OpenChanged { get; set; }
 
     [Parameter]
-    public ThemeManagerTheme? Theme { get; set; }
+    public MudThemePreset? Theme { get; set; }
 
     [Parameter]
     public bool IsDarkMode { get; set; }
@@ -45,8 +57,6 @@ public partial class MudThemeManager : ComponentBaseWithState
     [Parameter]
     public ColorPickerView ColorPickerView { get; set; } = ColorPickerView.Spectrum;
 
-    [Parameter]
-    public EventCallback<ThemeManagerTheme> ThemeChanged { get; set; }
 
     protected override void OnInitialized()
     {
@@ -58,10 +68,11 @@ public partial class MudThemeManager : ComponentBaseWithState
         {
             return;
         }
-
+        _currentPresetInfo = Theme.SliceToInfo();
         _customTheme = Theme.Theme.DeepClone();
         _currentPaletteLight = Theme.Theme.PaletteLight.DeepClone();
         _currentPaletteDark = Theme.Theme.PaletteDark.DeepClone();
+        StateHasChanged();
     }
 
     public Task UpdatePalette(ThemeUpdatedValue value)
@@ -186,6 +197,41 @@ public partial class MudThemeManager : ComponentBaseWithState
     {
         await ThemeChanged.InvokeAsync(Theme);
         StateHasChanged();
+    }
+
+    private async Task OnPresetChanged(ThemePresetOnChangedEventArgs args)
+    {
+        await ThemePresetChanged.InvokeAsync(args);
+
+        if (args.EventType == ThemePresetOnChangedEventType.Selected)
+        {
+            _currentPresetInfo = Theme.SliceToInfo();
+            _customTheme = Theme.Theme.DeepClone();
+            _currentPaletteLight = Theme.Theme.PaletteLight.DeepClone();
+            _currentPaletteDark = Theme.Theme.PaletteDark.DeepClone();
+            UpdateCustomTheme();
+        }
+
+        StateHasChanged();
+    }
+
+    private Task OnPresetAdded(string name, string category)
+    {
+        if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(category))
+        {
+            var copyInfo = Theme?.SliceToInfo();
+            if (copyInfo != null)
+            {
+                copyInfo.Name = name;
+                copyInfo.Category = category;
+                return ThemePresetChanged.InvokeAsync(new ThemePresetOnChangedEventArgs
+                {
+                    EventType = ThemePresetOnChangedEventType.Added,
+                    PresetInfo = copyInfo
+                });
+            }
+        }
+        return Task.CompletedTask;
     }
 
     private void OnIsDarkModeChanged(ParameterChangedEventArgs<bool> arg)

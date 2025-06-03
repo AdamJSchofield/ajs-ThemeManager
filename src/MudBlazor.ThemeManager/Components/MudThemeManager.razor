@@ -1,13 +1,14 @@
 ﻿@namespace MudBlazor.ThemeManager
+@using MudBlazor.ThemeManager.Components
 @inherits ComponentBaseWithState
 
 <CascadingValue Value="this">
     <MudDrawer @bind-Open:get="_openState.Value" @bind-Open:set="_openState.SetValueAsync" Anchor="Anchor.End" Elevation="25" Variant="@DrawerVariant.Temporary" Overlay="false" Width="312px">
         <div class="pt-4 px-4">
-            <MudText Typo="Typo.h6">Theme Presets</MudText>
-            <MudSelect T="string" @bind-Value="@ThemePresets" Disabled="true" Underline="false">
-                <MudSelectItem Value="@("Not Implemented")" />
-            </MudSelect>
+            <MudThemePresetSelect Title="Theme Presets" Label="Active Preset" ThemePresets="ThemePresets" ThemePresetChanged="@(async p => await OnPresetChanged(p))" SelectedThemePreset="@_currentPresetInfo" />
+        </div>
+        <div class="pt-4 px-4">
+            <MudTextField T="string" Label="Add preset" Placeholder="Preset name" @bind-Value="_newPresetName" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Save" IconSize="Size.Small" OnAdornmentClick="@(() => OnPresetAdded(_newPresetName, "Custom"))" Class="my-4" Underline="false" />
         </div>
         <MudDivider Class="my-2" />
         <div class="pt-2 px-4">

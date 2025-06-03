@@ -2,6 +2,8 @@
 
 namespace MudBlazor.ThemeManager.Extensions;
 
+[JsonSerializable(typeof(MudThemePresetInfo))]
+[JsonSerializable(typeof(MudThemePreset))]
 [JsonSerializable(typeof(MudTheme))]
 [JsonSerializable(typeof(Shadow))]
 [JsonSerializable(typeof(LayoutProperties))]

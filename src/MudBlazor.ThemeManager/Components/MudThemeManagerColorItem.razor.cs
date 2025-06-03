@@ -37,7 +37,7 @@ public partial class MudThemeManagerColorItem : ComponentBase
         }
     }
 
-    protected override bool ShouldRender() => _shouldRender;
+    //protected override bool ShouldRender() => _shouldRender;
 
     public Task UpdateColor(MudColor value)
     {

@@ -1,17 +1,20 @@
-﻿@inherits LayoutComponentBase
+﻿@using MudBlazor.ThemeManager.Extensions
+@using MudBlazor.ThemeManager.Models
+@inherits LayoutComponentBase
+@inject IThemePresetStorage ThemeStorage
 
-<MudThemeProvider @ref="@_mudThemeProvider" Theme="_themeManager.Theme" @bind-IsDarkMode="@_isDarkMode" />
+<MudThemeProvider @ref="@_mudThemeProvider" Theme="@_themePreset.Theme" @bind-IsDarkMode="@_isDarkMode" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudAppBar Elevation="_themeManager.AppBarElevation">
+    <MudAppBar Elevation="_themePreset.AppBarElevation">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
         <MudSpacer />
         <MudIconButton Icon="@Icons.Material.Filled.DarkMode" Color="Color.Inherit" OnClick="@((e) => DarkModeToggle())" Edge="Edge.End" />
     </MudAppBar>
-    <MudDrawer @bind-Open="_drawerOpen" ClipMode="_themeManager.DrawerClipMode" Elevation="_themeManager.DrawerElevation">
+    <MudDrawer @bind-Open="_drawerOpen" ClipMode="_themePreset.DrawerClipMode" Elevation="_themePreset.DrawerElevation">
         <MudText Typo="Typo.h6" Class="px-4 pt-2">Theme Manager</MudText>
         <MudText Typo="Typo.body2" Class="px-4 mud-text-secondary">Test Application</MudText>
         <NavMenu />
@@ -22,12 +25,13 @@
         </MudContainer>
     </MudMainContent>
     <MudThemeManagerButton OnClick="@((e) => OpenThemeManager(true))" />
-    <MudThemeManager Open="_themeManagerOpen" OpenChanged="OpenThemeManager" Theme="_themeManager" ThemeChanged="UpdateTheme" IsDarkMode="@_isDarkMode" />
+    <MudThemeManager Theme="_themePreset" ThemeChanged="UpdateTheme" ThemePresets="_themePresets" ThemePresetChanged="OnThemePresetChanged" IsDarkMode="@_isDarkMode" Open="_themeManagerOpen" OpenChanged="OpenThemeManager" />
 </MudLayout>
 
 @code {
-    private ThemeManagerTheme _themeManager = new();
+    private MudThemePreset _themePreset = new();
     private MudThemeProvider _mudThemeProvider;
+    private List<MudThemePresetInfo> _themePresets = new();
 
     private bool _isDarkMode;
     private bool _drawerOpen = true;
@@ -49,9 +53,9 @@
         StateHasChanged();
     }
 
-    private void UpdateTheme(ThemeManagerTheme value)
+    private void UpdateTheme(MudThemePreset value)
     {
-        _themeManager = value;
+        _themePreset = value;
         StateHasChanged();
     }
 
@@ -59,9 +63,68 @@
     {
         if (firstRender)
         {
-            _isDarkMode = await _mudThemeProvider.GetSystemPreference();
+            _themePreset = await ThemeStorage.GetActivePresetAsync() ?? new();
+            _themePresets = await ThemeStorage.GetAllPresetInfoAsync() ?? new List<MudThemePresetInfo>();
+            _isDarkMode = _themePreset.IsDarkModeDefault;
+
             StateHasChanged();
         }
         await base.OnAfterRenderAsync(firstRender);
+    }
+
+    private async Task OnThemePresetChanged(ThemePresetOnChangedEventArgs preset)
+    {
+        switch(preset.EventType)
+        {
+            case ThemePresetOnChangedEventType.Selected:
+                await OnPresetSelected(preset.PresetInfo);
+                break;
+            case ThemePresetOnChangedEventType.Added:
+                await OnPresetAddOrUpdated(preset.PresetInfo);
+                break;
+            case ThemePresetOnChangedEventType.Deleted:
+                await OnPresetDeleted(preset.PresetInfo);
+                break;
+            case ThemePresetOnChangedEventType.Updated:
+                await OnPresetAddOrUpdated(preset.PresetInfo);
+                break;
+        };
+    }
+
+    private async Task OnPresetAddOrUpdated(MudThemePresetInfo presetInfo)
+    {
+        var copy = _themePreset.DeepClone();
+        if (copy != null)
+        {
+            var existingPreset = _themePresets.FirstOrDefault(p => p.Name == presetInfo.Name && p.Category == presetInfo.Category);
+            if (existingPreset != null)
+            {
+                _themePresets.Remove(existingPreset);
+                await ThemeStorage.RemovePresetAsync(existingPreset);
+            }
+            _themePresets.Add(presetInfo);
+            copy.Name = presetInfo.Name;
+            copy.Category = presetInfo.Category;
+            await ThemeStorage.AddPresetAsync(copy);
+        }
+    }
+
+    private async Task OnPresetSelected(MudThemePresetInfo presetInfo)
+    {
+        var preset = await ThemeStorage.GetPresetAsync(presetInfo);
+        if (preset != null)
+        {
+            _isDarkMode = preset.IsDarkModeDefault;
+            await ThemeStorage.SetActivePresetAsync(preset);
+            UpdateTheme(preset);
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnPresetDeleted(MudThemePresetInfo presetInfo)
+    {
+        _themePresets.Remove(presetInfo);
+        await ThemeStorage.RemovePresetAsync(presetInfo);
+        StateHasChanged();
     }
 }

@@ -1,0 +1,37 @@
+﻿@if (Title != null)
+{
+    <MudText Typo="Typo.h6" Class="mb-2">@Title</MudText>
+}
+
+<MudSelect T="MudThemePresetInfo"
+            Label="@Label"
+            SelectedValuesChanged="@(async (p) => OnPresetSelected(p.First()))"
+            Underline="false"
+            Adornment="Adornment.End"
+            AdornmentIcon="@Icons.Material.Filled.Save"
+            ToStringFunc="@(p => p?.Name)"
+            Value="@SelectedThemePreset">
+                @foreach (var categoryGroup in ThemePresets.GroupBy(p => p.Category))
+                {
+                    <div style="display:none;">
+                        <MudText Typo="Typo.subtitle1">@categoryGroup.Key</MudText>
+                    </div>
+
+                        @foreach (var preset in categoryGroup)
+                        {
+                            <MudSelectItem T="MudThemePresetInfo" Value="@preset">
+                                <MudText Typo="Typo.subtitle2" Class="d-inline-flex flex-grow-1">@preset.Name</MudText>
+                                @if (!preset.IsReadOnly)
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                           Color="Color.Error"
+                                           Disabled="@preset.IsReadOnly"
+                                           OnClick="@(() => OnPresetRemoved(preset))"
+                                           Edge="Edge.End" Size="Size.Small" Class="d-inline-flex flex-grow-1 justify-end ml-2" />
+                                }
+                            </MudSelectItem>
+                        }
+
+                }
+</MudSelect>
+
