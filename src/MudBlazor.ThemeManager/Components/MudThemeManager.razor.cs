@@ -58,20 +58,41 @@ public partial class MudThemeManager : ComponentBaseWithState
     public ColorPickerView ColorPickerView { get; set; } = ColorPickerView.Spectrum;
 
 
-    protected override void OnInitialized()
+    protected override void OnAfterRender(bool firstRender)
     {
-        base.OnInitialized();
+        base.OnAfterRender(firstRender);
 
-        _currentPalette = GetPalette();
-
-        if (Theme is null)
+        if (firstRender)
         {
-            return;
+            if (Theme is null)
+            {
+                return;
+            }
+            _currentPresetInfo = Theme.SliceToInfo();
+            _customTheme = Theme.Theme.DeepClone();
+            _currentPaletteLight = Theme.Theme.PaletteLight.DeepClone();
+            _currentPaletteDark = Theme.Theme.PaletteDark.DeepClone();
+            if (Theme.IsDarkModeDefault)
+            {
+                _currentPalette = _currentPaletteDark ?? new();
+            }
+            else
+            {
+                _currentPalette = _currentPaletteLight ?? new();
+            }
+
+            StateHasChanged();
         }
-        _currentPresetInfo = Theme.SliceToInfo();
-        _customTheme = Theme.Theme.DeepClone();
-        _currentPaletteLight = Theme.Theme.PaletteLight.DeepClone();
-        _currentPaletteDark = Theme.Theme.PaletteDark.DeepClone();
+    }
+
+    public void UpdateTheme(MudThemePreset preset)
+    {
+        _currentPresetInfo = preset.SliceToInfo();
+        _customTheme = preset.Theme.DeepClone();
+        _currentPaletteLight = preset.Theme.PaletteLight.DeepClone();
+        _currentPaletteDark = preset.Theme.PaletteDark.DeepClone();
+        UpdateCustomTheme();
+
         StateHasChanged();
     }
 

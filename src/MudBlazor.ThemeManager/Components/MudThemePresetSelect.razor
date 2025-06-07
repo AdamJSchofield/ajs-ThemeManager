@@ -7,8 +7,7 @@
             Label="@Label"
             SelectedValuesChanged="@(async (p) => OnPresetSelected(p.First()))"
             Underline="false"
-            Adornment="Adornment.End"
-            AdornmentIcon="@Icons.Material.Filled.Save"
+            Variant="Variant.Outlined"
             ToStringFunc="@(p => p?.Name)"
             Value="@SelectedThemePreset">
                 @foreach (var categoryGroup in ThemePresets.GroupBy(p => p.Category))
