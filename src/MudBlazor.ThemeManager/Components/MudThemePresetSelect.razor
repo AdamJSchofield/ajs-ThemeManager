@@ -3,18 +3,22 @@
     <MudText Typo="Typo.h6" Class="mb-2">@Title</MudText>
 }
 
-<MudSelect T="MudThemePresetInfo"
-            Label="@Label"
-            SelectedValuesChanged="@(async (p) => OnPresetSelected(p.First()))"
-            Underline="false"
-            Variant="Variant.Outlined"
-            ToStringFunc="@(p => p?.Name)"
-            Value="@SelectedThemePreset">
-                @foreach (var categoryGroup in ThemePresets.GroupBy(p => p.Category))
-                {
-                    <div style="display:none;">
-                        <MudText Typo="Typo.subtitle1">@categoryGroup.Key</MudText>
-                    </div>
+<div class="pt-4 px-4">
+    <MudSelect T="MudThemePresetInfo"
+                Label="@Label"
+                SelectedValuesChanged="@(async (p) => await OnPresetSelected(p.First()))"
+                Underline="false"
+                Variant="Variant.Outlined"
+                ToStringFunc="@(p => p?.Name)"
+                Value="@ThemePreset">
+
+                    @foreach (var categoryGroup in ThemePresetInfos.GroupBy(p => p.Category))
+                    {
+                        <MudSelectItem T="MudThemePresetInfo" Disabled>
+                            <HeadContent>
+                                <MudText Typo="Typo.subtitle1">@categoryGroup.Key</MudText>
+                            </HeadContent>
+                        </MudSelectItem>
 
                         @foreach (var preset in categoryGroup)
                         {
@@ -23,14 +27,16 @@
                                 @if (!preset.IsReadOnly)
                                 {
                                     <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                           Color="Color.Error"
-                                           Disabled="@preset.IsReadOnly"
-                                           OnClick="@(() => OnPresetRemoved(preset))"
-                                           Edge="Edge.End" Size="Size.Small" Class="d-inline-flex flex-grow-1 justify-end ml-2" />
+                                            Color="Color.Error"
+                                            Disabled="@preset.IsReadOnly"
+                                            OnClick="@(() => OnPresetRemoved(preset))"
+                                            Edge="Edge.End" Size="Size.Small" Class="d-inline-flex flex-grow-1 justify-end ml-2" />
                                 }
                             </MudSelectItem>
                         }
-
-                }
-</MudSelect>
-
+                    }
+    </MudSelect>
+</div>
+<div class="pt-4 px-4">
+    <MudTextField T="string" Label="Add preset" Variant="Variant.Outlined" Placeholder="Preset name" @bind-Value="_newPresetName" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Save" IconSize="Size.Medium" OnAdornmentClick="@(() => OnPresetAdded(_newPresetName, "Custom"))" Class="my-4" Underline="false" />
+</div>

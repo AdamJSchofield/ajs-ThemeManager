@@ -1,6 +1,6 @@
 ﻿namespace MudBlazor.ThemeManager.Models
 {
-    public class ThemePresetOnChangedEventArgs : EventArgs
+    public class ThemePresetOnChangedEvent
     {
         public required ThemePresetOnChangedEventType EventType { get; set; }
         public required MudThemePresetInfo PresetInfo { get; set; }

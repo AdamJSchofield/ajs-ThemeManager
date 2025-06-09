@@ -16,7 +16,6 @@ public partial class MudThemeManager : ComponentBaseWithState
     private PaletteDark? _currentPaletteDark;
     private Palette _currentPalette;
     private MudTheme? _customTheme;
-    private MudThemePresetInfo? _currentPresetInfo;
     private string _newPresetName = string.Empty;
 
     public MudThemeManager()
@@ -32,11 +31,11 @@ public partial class MudThemeManager : ComponentBaseWithState
     }
 
     [Parameter]
-    public IEnumerable<MudThemePresetInfo> ThemePresets { get; set; } = Enumerable.Empty<MudThemePresetInfo>();
+    public IEnumerable<MudThemePresetInfo> ThemePresetInfos { get; set; } = Enumerable.Empty<MudThemePresetInfo>();
 
     // Invoked when the user interacts with preset management functions, e.g. selecting or updating a preset
     [Parameter]
-    public EventCallback<ThemePresetOnChangedEventArgs> ThemePresetChanged { get; set; }
+    public EventCallback<ThemePresetOnChangedEvent> ThemePresetChanged { get; set; }
 
     // Invoked when the user interacts with the theme manager and changes the theme
     [Parameter]
@@ -49,7 +48,7 @@ public partial class MudThemeManager : ComponentBaseWithState
     public EventCallback<bool> OpenChanged { get; set; }
 
     [Parameter]
-    public MudThemePreset? Theme { get; set; }
+    public MudThemePreset? ThemePreset { get; set; }
 
     [Parameter]
     public bool IsDarkMode { get; set; }
@@ -64,33 +63,20 @@ public partial class MudThemeManager : ComponentBaseWithState
 
         if (firstRender)
         {
-            if (Theme is null)
+            if (ThemePreset is null)
             {
                 return;
             }
-            _currentPresetInfo = Theme.SliceToInfo();
-            _customTheme = Theme.Theme.DeepClone();
-            _currentPaletteLight = Theme.Theme.PaletteLight.DeepClone();
-            _currentPaletteDark = Theme.Theme.PaletteDark.DeepClone();
-            if (Theme.IsDarkModeDefault)
-            {
-                _currentPalette = _currentPaletteDark ?? new();
-            }
-            else
-            {
-                _currentPalette = _currentPaletteLight ?? new();
-            }
-
+            UpdatePreset();
             StateHasChanged();
         }
     }
 
-    public void UpdateTheme(MudThemePreset preset)
+    public void UpdatePreset()
     {
-        _currentPresetInfo = preset.SliceToInfo();
-        _customTheme = preset.Theme.DeepClone();
-        _currentPaletteLight = preset.Theme.PaletteLight.DeepClone();
-        _currentPaletteDark = preset.Theme.PaletteDark.DeepClone();
+        _customTheme = ThemePreset?.Theme.DeepClone();
+        _currentPaletteLight = ThemePreset?.Theme.PaletteLight.DeepClone();
+        _currentPaletteDark = ThemePreset?.Theme.PaletteDark.DeepClone();
         UpdateCustomTheme();
 
         StateHasChanged();
@@ -100,7 +86,7 @@ public partial class MudThemeManager : ComponentBaseWithState
     {
         UpdateCustomTheme();
 
-        if (Theme is null || _customTheme is null)
+        if (ThemePreset is null || _customTheme is null)
         {
             return Task.CompletedTask;
         }
@@ -201,12 +187,12 @@ public partial class MudThemeManager : ComponentBaseWithState
         if (_isDarkModeState.Value)
         {
             _currentPaletteDark = _customTheme.PaletteDark;
-            Theme.Theme.PaletteDark = _customTheme.PaletteDark;
+            ThemePreset.Theme.PaletteDark = _customTheme.PaletteDark;
         }
         else
         {
             _currentPaletteLight = _customTheme.PaletteLight;
-            Theme.Theme.PaletteLight = _customTheme.PaletteLight;
+            ThemePreset.Theme.PaletteLight = _customTheme.PaletteLight;
         }
 
         return UpdateThemeChangedAsync();
@@ -216,43 +202,23 @@ public partial class MudThemeManager : ComponentBaseWithState
 
     private async Task UpdateThemeChangedAsync()
     {
-        await ThemeChanged.InvokeAsync(Theme);
+        await ThemeChanged.InvokeAsync(ThemePreset).ConfigureAwait(false);
         StateHasChanged();
     }
 
-    private async Task OnPresetChanged(ThemePresetOnChangedEventArgs args)
+    private async Task OnPresetChanged(ThemePresetOnChangedEvent args)
     {
-        await ThemePresetChanged.InvokeAsync(args);
+        await ThemePresetChanged.InvokeAsync(args).ConfigureAwait(false);
 
         if (args.EventType == ThemePresetOnChangedEventType.Selected)
         {
-            _currentPresetInfo = Theme.SliceToInfo();
-            _customTheme = Theme.Theme.DeepClone();
-            _currentPaletteLight = Theme.Theme.PaletteLight.DeepClone();
-            _currentPaletteDark = Theme.Theme.PaletteDark.DeepClone();
+            _customTheme = ThemePreset?.Theme.DeepClone();
+            _currentPaletteLight = ThemePreset?.Theme.PaletteLight.DeepClone();
+            _currentPaletteDark = ThemePreset?.Theme.PaletteDark.DeepClone();
             UpdateCustomTheme();
         }
 
         StateHasChanged();
-    }
-
-    private Task OnPresetAdded(string name, string category)
-    {
-        if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(category))
-        {
-            var copyInfo = Theme?.SliceToInfo();
-            if (copyInfo != null)
-            {
-                copyInfo.Name = name;
-                copyInfo.Category = category;
-                return ThemePresetChanged.InvokeAsync(new ThemePresetOnChangedEventArgs
-                {
-                    EventType = ThemePresetOnChangedEventType.Added,
-                    PresetInfo = copyInfo
-                });
-            }
-        }
-        return Task.CompletedTask;
     }
 
     private void OnIsDarkModeChanged(ParameterChangedEventArgs<bool> arg)
@@ -265,19 +231,19 @@ public partial class MudThemeManager : ComponentBaseWithState
 
     private Task OnDrawerClipModeAsync(DrawerClipMode value)
     {
-        if (Theme is null)
+        if (ThemePreset is null)
         {
             return Task.CompletedTask;
         }
 
-        Theme.DrawerClipMode = value;
+        ThemePreset.DrawerClipMode = value;
 
         return UpdateThemeChangedAsync();
     }
 
     private Task OnDefaultBorderRadiusAsync(int value)
     {
-        if (Theme is null)
+        if (ThemePreset is null)
         {
             return Task.CompletedTask;
         }
@@ -287,68 +253,68 @@ public partial class MudThemeManager : ComponentBaseWithState
             return Task.CompletedTask;
         }
 
-        Theme.DefaultBorderRadius = value;
+        ThemePreset.DefaultBorderRadius = value;
         var newBorderRadius = _customTheme.LayoutProperties;
 
         newBorderRadius.DefaultBorderRadius = $"{value}px";
 
         _customTheme.LayoutProperties = newBorderRadius;
-        Theme.Theme = _customTheme;
+        ThemePreset.Theme = _customTheme;
 
         return UpdateThemeChangedAsync();
     }
 
     private Task OnDefaultElevationAsync(int value)
     {
-        if (Theme is null || _customTheme is null)
+        if (ThemePreset is null || _customTheme is null)
         {
             return Task.CompletedTask;
         }
 
-        Theme.DefaultElevation = value;
+        ThemePreset.DefaultElevation = value;
         var newDefaultElevation = _customTheme.Shadows;
 
         string newElevation = newDefaultElevation.Elevation[value];
         newDefaultElevation.Elevation[1] = newElevation;
 
         _customTheme.Shadows.Elevation[1] = newElevation;
-        Theme.Theme = _customTheme;
+        ThemePreset.Theme = _customTheme;
 
         return UpdateThemeChangedAsync();
     }
 
     private Task OnAppBarElevationAsync(int value)
     {
-        if (Theme is null)
+        if (ThemePreset is null)
         {
             return Task.CompletedTask;
         }
 
-        Theme.AppBarElevation = value;
+        ThemePreset.AppBarElevation = value;
 
         return UpdateThemeChangedAsync();
     }
 
     private Task OnDrawerElevationAsync(int value)
     {
-        if (Theme is null)
+        if (ThemePreset is null)
         {
             return Task.CompletedTask;
         }
 
-        Theme.DrawerElevation = value;
+        ThemePreset.DrawerElevation = value;
 
         return UpdateThemeChangedAsync();
     }
 
     private Task OnFontFamilyAsync(string value)
     {
-        if (Theme is null || _customTheme is null)
+        if (ThemePreset is null || _customTheme is null)
         {
             return Task.CompletedTask;
         }
 
-        Theme.FontFamily = value;
+        ThemePreset.FontFamily = value;
         var newTypography = _customTheme.Typography;
 
         newTypography.Body1.FontFamily = new[] { value, "Helvetica", "Arial", "sans-serif" };
@@ -367,7 +333,7 @@ public partial class MudThemeManager : ComponentBaseWithState
         newTypography.Subtitle2.FontFamily = new[] { value, "Helvetica", "Arial", "sans-serif" };
 
         _customTheme.Typography = newTypography;
-        Theme.Theme = _customTheme;
+        ThemePreset.Theme = _customTheme;
 
         return UpdateThemeChangedAsync();
     }

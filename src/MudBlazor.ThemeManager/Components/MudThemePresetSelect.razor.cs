@@ -1,16 +1,22 @@
 ﻿
 using Microsoft.AspNetCore.Components;
+using MudBlazor.ThemeManager.Extensions;
 using MudBlazor.ThemeManager.Models;
 
 namespace MudBlazor.ThemeManager.Components
 {
     public partial class MudThemePresetSelect : ComponentBase
     {
-        [Parameter]
-        public IEnumerable<MudThemePresetInfo> ThemePresets { get; set; } = Enumerable.Empty<MudThemePresetInfo>();
+        private string? _newPresetName;
+
+        [CascadingParameter]
+        public MudThemeManager ThemeManager { get; set; }
 
         [Parameter]
-        public MudThemePresetInfo SelectedThemePreset { get; set; }
+        public IEnumerable<MudThemePresetInfo> ThemePresetInfos { get; set; } = Enumerable.Empty<MudThemePresetInfo>();
+
+        [Parameter]
+        public MudThemePresetInfo ThemePreset { get; set; } = new();
 
         [Parameter]
         public string? Title { get; set; }
@@ -19,14 +25,11 @@ namespace MudBlazor.ThemeManager.Components
         public string? Label { get; set; }
 
         [Parameter]
-        public bool SingleCategory { get; set; } = true;
-
-        [Parameter]
-        public EventCallback<ThemePresetOnChangedEventArgs> ThemePresetChanged { get; set; }
+        public EventCallback<ThemePresetOnChangedEvent> ThemePresetChanged { get; set; }
 
         private Task OnPresetSelected(MudThemePresetInfo presetMetadata)
         {
-            return ThemePresetChanged.InvokeAsync(new ThemePresetOnChangedEventArgs
+            return ThemePresetChanged.InvokeAsync(new ThemePresetOnChangedEvent
             {
                 EventType = ThemePresetOnChangedEventType.Selected,
                 PresetInfo = presetMetadata
@@ -35,11 +38,30 @@ namespace MudBlazor.ThemeManager.Components
 
         private Task OnPresetRemoved(MudThemePresetInfo presetMetadata)
         {
-            return ThemePresetChanged.InvokeAsync(new ThemePresetOnChangedEventArgs
+            return ThemePresetChanged.InvokeAsync(new ThemePresetOnChangedEvent
             {
                 EventType = ThemePresetOnChangedEventType.Deleted,
                 PresetInfo = presetMetadata
             });
+        }
+
+        private Task OnPresetAdded(string name, string category)
+        {
+            if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(category))
+            {
+                var copyInfo = ThemeManager.ThemePreset?.SliceToInfo();
+                if (copyInfo != null)
+                {
+                    copyInfo.Name = name;
+                    copyInfo.Category = category;
+                    return ThemePresetChanged.InvokeAsync(new ThemePresetOnChangedEvent
+                    {
+                        EventType = ThemePresetOnChangedEventType.Added,
+                        PresetInfo = copyInfo
+                    });
+                }
+            }
+            return Task.CompletedTask;
         }
     }
 }
