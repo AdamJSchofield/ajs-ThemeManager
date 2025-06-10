@@ -4,7 +4,16 @@
 
 <CascadingValue Value="this">
     <MudDrawer @bind-Open:get="_openState.Value" @bind-Open:set="_openState.SetValueAsync" Anchor="Anchor.End" Elevation="25" Variant="@DrawerVariant.Temporary" Overlay="false" Width="312px">
+
         <MudThemePresetSelect Title="Theme Presets" Label="Active Preset" ThemePresetInfos="ThemePresetInfos" ThemePresetChanged="@(async p => await OnPresetChanged(p))" ThemePreset="ThemePreset" />
+        <div class="pt-2 px-4">
+            <MudText Typo="Typo.h6">Palette</MudText>
+            <MudItem Class="d-flex align-center flex-grow-1 justify-space-evenly">
+                <MudText Typo="Typo.caption">Light</MudText>
+                <MudSwitch T="bool" Value="_isDarkModeState.Value" ValueChanged="OnIsDarkModeToggled"></MudSwitch>
+                <MudText Typo="Typo.caption">Dark</MudText>
+            </MudItem>
+        </div>
         <MudDivider Class="my-2" />
         <div class="pt-2 px-4">
             <MudText Typo="Typo.h6" Class="mb-4">Custom Settings</MudText>

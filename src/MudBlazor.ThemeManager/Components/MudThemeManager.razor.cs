@@ -16,7 +16,6 @@ public partial class MudThemeManager : ComponentBaseWithState
     private PaletteDark? _currentPaletteDark;
     private Palette _currentPalette;
     private MudTheme? _customTheme;
-    private string _newPresetName = string.Empty;
 
     public MudThemeManager()
     {
@@ -54,6 +53,9 @@ public partial class MudThemeManager : ComponentBaseWithState
     public bool IsDarkMode { get; set; }
 
     [Parameter]
+    public EventCallback<bool> IsDarkModeChanged { get; set; }
+
+    [Parameter]
     public ColorPickerView ColorPickerView { get; set; } = ColorPickerView.Spectrum;
 
 
@@ -68,7 +70,6 @@ public partial class MudThemeManager : ComponentBaseWithState
                 return;
             }
             UpdatePreset();
-            StateHasChanged();
         }
     }
 
@@ -202,13 +203,13 @@ public partial class MudThemeManager : ComponentBaseWithState
 
     private async Task UpdateThemeChangedAsync()
     {
-        await ThemeChanged.InvokeAsync(ThemePreset).ConfigureAwait(false);
+        await ThemeChanged.InvokeAsync(ThemePreset);
         StateHasChanged();
     }
 
     private async Task OnPresetChanged(ThemePresetOnChangedEvent args)
     {
-        await ThemePresetChanged.InvokeAsync(args).ConfigureAwait(false);
+        await ThemePresetChanged.InvokeAsync(args);
 
         if (args.EventType == ThemePresetOnChangedEventType.Selected)
         {
@@ -217,8 +218,12 @@ public partial class MudThemeManager : ComponentBaseWithState
             _currentPaletteDark = ThemePreset?.Theme.PaletteDark.DeepClone();
             UpdateCustomTheme();
         }
+    }
 
-        StateHasChanged();
+    private async Task OnIsDarkModeToggled()
+    {
+        await _isDarkModeState.SetValueAsync(!_isDarkModeState.Value);
+        await IsDarkModeChanged.InvokeAsync(_isDarkModeState.Value);
     }
 
     private void OnIsDarkModeChanged(ParameterChangedEventArgs<bool> arg)
