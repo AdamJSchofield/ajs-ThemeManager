@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components;
+using MudBlazor.ThemeManager.Models;
 using MudBlazor.Utilities;
 
 namespace MudBlazor.ThemeManager;

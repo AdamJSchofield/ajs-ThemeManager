@@ -1,4 +1,4 @@
-﻿namespace MudBlazor.ThemeManager;
+﻿namespace MudBlazor.ThemeManager.Models;
 
 public enum ThemePaletteColor
 {

@@ -1,4 +1,6 @@
-﻿namespace MudBlazor.ThemeManager
+﻿using MudBlazor.ThemeManager.Models;
+
+namespace MudBlazor.ThemeManager
 {
     public abstract class MudThemePresetManager
     {

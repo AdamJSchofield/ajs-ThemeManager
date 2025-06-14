@@ -1,7 +1,7 @@
 ﻿using MudBlazor.ThemeManager.Extensions;
 using System.Text.Json;
 
-namespace MudBlazor.ThemeManager;
+namespace MudBlazor.ThemeManager.Models;
 
 /// <summary>
 /// Contains all details about a theme preset including the underlying theme and other properties.

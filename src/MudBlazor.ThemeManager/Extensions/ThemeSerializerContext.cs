@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using MudBlazor.ThemeManager.Models;
+using System.Text.Json.Serialization;
 
 namespace MudBlazor.ThemeManager.Extensions;
 
